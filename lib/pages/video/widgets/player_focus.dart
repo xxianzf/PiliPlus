@@ -256,7 +256,7 @@ class PlayerFocus extends StatelessWidget {
           onSendDanmaku();
           return true;
 
-        // 小键盘 +/-/* 倍速
+        // 小键盘 + - * 倍速
         case LogicalKeyboardKey.numpadAdd:
         case LogicalKeyboardKey.numpadSubtract:
         case LogicalKeyboardKey.numpadMultiply:
@@ -269,18 +269,19 @@ class PlayerFocus extends StatelessWidget {
         case LogicalKeyboardKey.pageUp:
           if (introController case final introController?) {
             if (!introController.prevPlay()) {
-              SmartDialog.showToast('已经是第一集了');
+              SmartDialog.showToast('第一集');
             }
           }
           return true;
         case LogicalKeyboardKey.pageDown:
           if (introController case final introController?) {
             if (!introController.nextPlay()) {
-              SmartDialog.showToast('已经是最后一集了');
+              SmartDialog.showToast('最后一集');
             }
           }
           return true;
 
+        // End 合集弹窗
         case LogicalKeyboardKey.end:
           if (introController case final UgcIntroController ugcCtr) {
             ugcCtr.actionRelationMod(context);
@@ -302,7 +303,6 @@ class PlayerFocus extends StatelessWidget {
             return true;
 
           case LogicalKeyboardKey.keyT:
-          case LogicalKeyboardKey.keyV:
             introController?.viewLater();
             return true;
         }
