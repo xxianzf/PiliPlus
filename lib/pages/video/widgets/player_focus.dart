@@ -34,11 +34,11 @@ class PlayerFocus extends StatelessWidget {
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
 
-  static const Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
-    LogicalKeyboardKey.numpadAdd: (s) => s + 1.0,
-    LogicalKeyboardKey.numpadSubtract: (s) => s - 1.0,
-    LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
-  };
+static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
+  LogicalKeyboardKey.numpadAdd: (s) => s + 1.0,
+  LogicalKeyboardKey.numpadSubtract: (s) => s - 1.0,
+  LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
+};
 
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
