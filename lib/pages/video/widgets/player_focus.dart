@@ -277,7 +277,7 @@ static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
           }
           return true;
 
-        case LogicalKeyboardKey.bracketLeft:
+        case LogicalKeyboardKey.pageup:
           if (introController case final introController?) {
             if (!introController.prevPlay()) {
               SmartDialog.showToast('已经是第一集了');
@@ -285,7 +285,7 @@ static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
           }
           return true;
 
-        case LogicalKeyboardKey.bracketRight:
+        case LogicalKeyboardKey.pageDown:
           if (introController case final introController?) {
             if (!introController.nextPlay()) {
               SmartDialog.showToast('已经是最后一集了');
