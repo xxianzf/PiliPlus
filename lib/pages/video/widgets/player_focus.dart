@@ -34,11 +34,11 @@ class PlayerFocus extends StatelessWidget {
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
 
-static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
-  LogicalKeyboardKey.numpadAdd: (s) => s + 0.1,
-  LogicalKeyboardKey.numpadSubtract: (s) => s - 0.1,
-  LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
-};
+  static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
+    LogicalKeyboardKey.numpadAdd: (s) => s + 0.1,
+    LogicalKeyboardKey.numpadSubtract: (s) => s - 0.1,
+    LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
+  };
 
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
@@ -164,15 +164,15 @@ static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
           }
           return true;
 
-    case LogicalKeyboardKey.numpadDivide:
-      final isFullScreen = this.isFullScreen;
+        case LogicalKeyboardKey.numpadDivide:
+          final isFullScreen = this.isFullScreen;
           if (isFullScreen && plPlayerController.controlsLock.value) {
-                plPlayerController
+            plPlayerController
               ..controlsLock.value = false
               ..showControls.value = false;
           }
           plPlayerController.triggerFullScreen(
-                status: !isFullScreen,
+            status: !isFullScreen,
             inAppFullScreen: false,
           );
           return true;
