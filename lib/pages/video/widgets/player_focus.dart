@@ -140,14 +140,11 @@ class PlayerFocus extends StatelessWidget {
               ..longPressTimer?.cancel()
               ..longPressTimer = Timer.periodic(
                 const Duration(milliseconds: 200),
-                plPlayerController.multiBackwardStart,
+                (_) => plPlayerController.onBackward(),
               );
           }
         } else if (event is KeyUpEvent) {
           plPlayerController.cancelLongPressTimer();
-          if (hasPlayer) {
-            plPlayerController.multiBackwardEnd();
-          }
         }
       }
       return true;
@@ -305,6 +302,7 @@ class PlayerFocus extends StatelessWidget {
             return true;
 
           case LogicalKeyboardKey.keyT:
+          case LogicalKeyboardKey.keyV:
             introController?.viewLater();
             return true;
         }
