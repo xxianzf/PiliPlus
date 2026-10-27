@@ -34,6 +34,12 @@ class PlayerFocus extends StatelessWidget {
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
 
+  static const Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
+    LogicalKeyboardKey.numpadAdd: (s) => s + 1.0,
+    LogicalKeyboardKey.numpadSubtract: (s) => s - 1.0,
+    LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
+  };
+
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
         logicalKey == LogicalKeyboardKey.arrowLeft ||
@@ -68,18 +74,6 @@ class PlayerFocus extends StatelessWidget {
           )
         : math.max(0.0, plPlayerController.volume.value - 0.1);
     plPlayerController.setVolume(volume);
-  }
-
-  void _stepPlaybackSpeed({required bool isIncrease}) {
-    final speed = plPlayerController.playbackSpeed;
-    final speedList = plPlayerController.speedList;
-    final newSpeed = isIncrease
-        ? speedList.where((e) => e > speed).minOrNull
-        : speedList.where((e) => e < speed).maxOrNull;
-    if (newSpeed != null) {
-      plPlayerController.setPlaybackSpeed(newSpeed);
-    }
-    SmartDialog.showToast('${newSpeed ?? speed}x播放');
   }
 
   void _updateVolume(KeyEvent event, {required bool isIncrease}) {
@@ -236,73 +230,68 @@ class PlayerFocus extends StatelessWidget {
           }
           onSendDanmaku();
           return true;
-      }
 
-      if (!plPlayerController.isLive) {
-        final isDigit1 = key == LogicalKeyboardKey.digit1;
-        if (isDigit1 || key == LogicalKeyboardKey.digit2) {
-          if (HardwareKeyboard.instance.isShiftPressed && hasPlayer) {
-            final speed = isDigit1 ? 1.0 : 2.0;
-            if (speed != plPlayerController.playbackSpeed) {
-              plPlayerController.setPlaybackSpeed(speed);
+        // 倍速
+        case LogicalKeyboardKey.numpadAdd:
+        case LogicalKeyboardKey.numpadSubtract:
+        case LogicalKeyboardKey.numpadMultiply:
+          if (!plPlayerController.isLive && hasPlayer) {
+            final fn = _speedActions[key];
+            if (fn != null) {
+              final newSpeed = fn(plPlayerController.playbackSpeed);
+              if (newSpeed != plPlayerController.playbackSpeed) {
+                plPlayerController.setPlaybackSpeed(newSpeed);
+              }
+              SmartDialog.showToast('${newSpeed}x播放');
             }
-            SmartDialog.showToast('${speed}x播放');
           }
           return true;
-        }
 
-        switch (key) {
-          case LogicalKeyboardKey.arrowLeft:
-            if (hasPlayer) {
-              plPlayerController.onBackward(
-                plPlayerController.fastForBackwardDuration,
-              );
+        case LogicalKeyboardKey.arrowLeft:
+          if (hasPlayer) {
+            plPlayerController.onBackward(
+              plPlayerController.fastForBackwardDuration,
+            );
+          }
+          return true;
+
+        case LogicalKeyboardKey.keyW:
+          if (HardwareKeyboard.instance.isMetaPressed) {
+            return true;
+          }
+          introController?.actionCoinVideo();
+          return true;
+
+        case LogicalKeyboardKey.keyE:
+          introController?.actionFavVideo(isQuick: true);
+          return true;
+
+        case LogicalKeyboardKey.keyT:
+        case LogicalKeyboardKey.keyV:
+          introController?.viewLater();
+          return true;
+
+        case LogicalKeyboardKey.keyG:
+          if (introController case final UgcIntroController ugcCtr) {
+            ugcCtr.actionRelationMod(context);
+          }
+          return true;
+
+        case LogicalKeyboardKey.bracketLeft:
+          if (introController case final introController?) {
+            if (!introController.prevPlay()) {
+              SmartDialog.showToast('已经是第一集了');
             }
-            return true;
+          }
+          return true;
 
-          case LogicalKeyboardKey.keyW:
-            if (HardwareKeyboard.instance.isMetaPressed) {
-              return true;
+        case LogicalKeyboardKey.bracketRight:
+          if (introController case final introController?) {
+            if (!introController.nextPlay()) {
+              SmartDialog.showToast('已经是最后一集了');
             }
-            introController?.actionCoinVideo();
-            return true;
-
-          case LogicalKeyboardKey.keyE:
-            introController?.actionFavVideo(isQuick: true);
-            return true;
-
-          case LogicalKeyboardKey.keyT || LogicalKeyboardKey.keyV:
-            introController?.viewLater();
-            return true;
-
-          case LogicalKeyboardKey.keyG:
-            if (introController case final UgcIntroController ugcCtr) {
-              ugcCtr.actionRelationMod(context);
-            }
-            return true;
-
-          case LogicalKeyboardKey.bracketLeft:
-            if (introController case final introController?) {
-              if (!introController.prevPlay()) {
-                SmartDialog.showToast('已经是第一集了');
-              }
-            }
-            return true;
-
-          case LogicalKeyboardKey.bracketRight:
-            if (introController case final introController?) {
-              if (!introController.nextPlay()) {
-                SmartDialog.showToast('已经是最后一集了');
-              }
-            }
-            return true;
-
-          case LogicalKeyboardKey.comma || LogicalKeyboardKey.period:
-            if (hasPlayer && !plPlayerController.longPressStatus.value) {
-              _stepPlaybackSpeed(isIncrease: key == LogicalKeyboardKey.period);
-            }
-            return true;
-        }
+          }
+          return true;
       }
     }
 
