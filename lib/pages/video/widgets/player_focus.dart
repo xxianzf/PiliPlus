@@ -35,8 +35,8 @@ class PlayerFocus extends StatelessWidget {
   final VoidCallback? onRefresh;
 
 static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
-  LogicalKeyboardKey.numpadAdd: (s) => s + 1.0,
-  LogicalKeyboardKey.numpadSubtract: (s) => s - 1.0,
+  LogicalKeyboardKey.numpadAdd: (s) => s + 0.1,
+  LogicalKeyboardKey.numpadSubtract: (s) => s - 0.1,
   LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
 };
 
