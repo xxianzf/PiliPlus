@@ -34,9 +34,9 @@ class PlayerFocus extends StatelessWidget {
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
 
-  static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
-    LogicalKeyboardKey.numpadAdd: (s) => s + 0.1,
-    LogicalKeyboardKey.numpadSubtract: (s) => s - 0.1,
+  static final Map<LogicalKeyboardKey, double Function(double)> speedActions = {
+    LogicalKeyboardKey.numpadAdd: (s) => ((s * 10 + 1).round()) / 10.0,
+    LogicalKeyboardKey.numpadSubtract: (s) => ((s * 10 - 1).round()) / 10.0,
     LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
   };
 
@@ -84,7 +84,7 @@ class PlayerFocus extends StatelessWidget {
           ..longPressTimer?.cancel()
           ..longPressTimer = Timer.periodic(
             const Duration(milliseconds: 150),
-            (_) => _setVolume(isIncrease: isIncrease),
+            () => _setVolume(isIncrease: isIncrease),
           );
       }
     } else if (event is KeyUpEvent) {
@@ -236,7 +236,7 @@ class PlayerFocus extends StatelessWidget {
         case LogicalKeyboardKey.numpadSubtract:
         case LogicalKeyboardKey.numpadMultiply:
           if (!plPlayerController.isLive && hasPlayer) {
-            final fn = _speedActions[key];
+            final fn = speedActions[key];
             if (fn != null) {
               final newSpeed = fn(plPlayerController.playbackSpeed);
               if (newSpeed != plPlayerController.playbackSpeed) {
@@ -270,7 +270,7 @@ class PlayerFocus extends StatelessWidget {
           introController?.viewLater();
           return true;
 
-        case LogicalKeyboardKey.home:
+        case LogicalKeyboardKey.f12:
           if (introController case final UgcIntroController ugcCtr) {
             ugcCtr.actionRelationMod(context);
           }
