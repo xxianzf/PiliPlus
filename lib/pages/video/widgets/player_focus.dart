@@ -164,16 +164,16 @@ static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
           }
           return true;
 
-        case LogicalKeyboardKey.keyF:
-          final isFullScreen = this.isFullScreen;
+    case LogicalKeyboardKey.numpadDivide:
+      final isFullScreen = this.isFullScreen;
           if (isFullScreen && plPlayerController.controlsLock.value) {
-            plPlayerController
+                plPlayerController
               ..controlsLock.value = false
               ..showControls.value = false;
           }
           plPlayerController.triggerFullScreen(
-            status: !isFullScreen,
-            inAppFullScreen: HardwareKeyboard.instance.isShiftPressed,
+                status: !isFullScreen,
+            inAppFullScreen: false,
           );
           return true;
 
@@ -266,18 +266,17 @@ static final Map<LogicalKeyboardKey, double Function(double)> _speedActions = {
           introController?.actionFavVideo(isQuick: true);
           return true;
 
-        case LogicalKeyboardKey.keyT:
-        case LogicalKeyboardKey.keyV:
+        case LogicalKeyboardKey.end:
           introController?.viewLater();
           return true;
 
-        case LogicalKeyboardKey.keyG:
+        case LogicalKeyboardKey.home:
           if (introController case final UgcIntroController ugcCtr) {
             ugcCtr.actionRelationMod(context);
           }
           return true;
 
-        case LogicalKeyboardKey.pageup:
+        case LogicalKeyboardKey.pageUp:
           if (introController case final introController?) {
             if (!introController.prevPlay()) {
               SmartDialog.showToast('已经是第一集了');
