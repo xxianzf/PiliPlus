@@ -8,7 +8,6 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -33,12 +32,6 @@ class PlayerFocus extends StatelessWidget {
   final ValueGetter<bool>? canPlay;
   final ValueGetter<bool>? onSkipSegment;
   final VoidCallback? onRefresh;
-
-  static final Map<LogicalKeyboardKey, double Function(double)> speedActions = {
-    LogicalKeyboardKey.numpadAdd: (s) => ((s * 10 + 1).round()) / 10.0,
-    LogicalKeyboardKey.numpadSubtract: (s) => ((s * 10 - 1).round()) / 10.0,
-    LogicalKeyboardKey.numpadMultiply: (_) => 1.0,
-  };
 
   static bool _shouldHandle(LogicalKeyboardKey logicalKey) {
     return logicalKey == LogicalKeyboardKey.tab ||
@@ -76,6 +69,20 @@ class PlayerFocus extends StatelessWidget {
     plPlayerController.setVolume(volume);
   }
 
+  void _numpadSpeed({required LogicalKeyboardKey key}) {
+    double sp = plPlayerController.playbackSpeed;
+    if (key == LogicalKeyboardKey.numpadAdd) {
+      sp += 0.1;
+    } else if (key == LogicalKeyboardKey.numpadSubtract) {
+      sp -= 0.1;
+    } else if (key == LogicalKeyboardKey.numpadMultiply) {
+      sp = 1.0;
+    }
+    sp = (sp * 10).round() / 10;
+    plPlayerController.setPlaybackSpeed(sp);
+    SmartDialog.showToast('${sp}x播放');
+  }
+
   void _updateVolume(KeyEvent event, {required bool isIncrease}) {
     if (event is KeyDownEvent) {
       if (hasPlayer) {
@@ -84,7 +91,7 @@ class PlayerFocus extends StatelessWidget {
           ..longPressTimer?.cancel()
           ..longPressTimer = Timer.periodic(
             const Duration(milliseconds: 150),
-            () => _setVolume(isIncrease: isIncrease),
+            (_) => _setVolume(isIncrease: isIncrease),
           );
       }
     } else if (event is KeyUpEvent) {
@@ -122,6 +129,27 @@ class PlayerFocus extends StatelessWidget {
     final isArrowUp = key == LogicalKeyboardKey.arrowUp;
     if (isArrowUp || key == LogicalKeyboardKey.arrowDown) {
       _updateVolume(event, isIncrease: isArrowUp);
+      return true;
+    }
+
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      if (!plPlayerController.isLive) {
+        if (event is KeyDownEvent) {
+          if (hasPlayer) {
+            plPlayerController
+              ..longPressTimer?.cancel()
+              ..longPressTimer = Timer.periodic(
+                const Duration(milliseconds: 200),
+                plPlayerController.multiBackwardStart,
+              );
+          }
+        } else if (event is KeyUpEvent) {
+          plPlayerController.cancelLongPressTimer();
+          if (hasPlayer) {
+            plPlayerController.multiBackwardEnd();
+          }
+        }
+      }
       return true;
     }
 
@@ -231,51 +259,16 @@ class PlayerFocus extends StatelessWidget {
           onSendDanmaku();
           return true;
 
-        // 倍速
+        // 小键盘 +/-/* 倍速
         case LogicalKeyboardKey.numpadAdd:
         case LogicalKeyboardKey.numpadSubtract:
         case LogicalKeyboardKey.numpadMultiply:
           if (!plPlayerController.isLive && hasPlayer) {
-            final fn = speedActions[key];
-            if (fn != null) {
-              final newSpeed = fn(plPlayerController.playbackSpeed);
-              if (newSpeed != plPlayerController.playbackSpeed) {
-                plPlayerController.setPlaybackSpeed(newSpeed);
-              }
-              SmartDialog.showToast('${newSpeed}x播放');
-            }
+            _numpadSpeed(key: key);
           }
           return true;
 
-        case LogicalKeyboardKey.arrowLeft:
-          if (hasPlayer) {
-            plPlayerController.onBackward(
-              plPlayerController.fastForBackwardDuration,
-            );
-          }
-          return true;
-
-        case LogicalKeyboardKey.keyW:
-          if (HardwareKeyboard.instance.isMetaPressed) {
-            return true;
-          }
-          introController?.actionCoinVideo();
-          return true;
-
-        case LogicalKeyboardKey.keyE:
-          introController?.actionFavVideo(isQuick: true);
-          return true;
-
-        case LogicalKeyboardKey.end:
-          introController?.viewLater();
-          return true;
-
-        case LogicalKeyboardKey.f12:
-          if (introController case final UgcIntroController ugcCtr) {
-            ugcCtr.actionRelationMod(context);
-          }
-          return true;
-
+        // PageUp / PageDown 上下集
         case LogicalKeyboardKey.pageUp:
           if (introController case final introController?) {
             if (!introController.prevPlay()) {
@@ -283,7 +276,6 @@ class PlayerFocus extends StatelessWidget {
             }
           }
           return true;
-
         case LogicalKeyboardKey.pageDown:
           if (introController case final introController?) {
             if (!introController.nextPlay()) {
@@ -291,6 +283,31 @@ class PlayerFocus extends StatelessWidget {
             }
           }
           return true;
+
+        case LogicalKeyboardKey.end:
+          if (introController case final UgcIntroController ugcCtr) {
+            ugcCtr.actionRelationMod(context);
+          }
+          return true;
+      }
+
+      if (!plPlayerController.isLive) {
+        switch (key) {
+          case LogicalKeyboardKey.keyW:
+            if (HardwareKeyboard.instance.isMetaPressed) {
+              return true;
+            }
+            introController?.actionCoinVideo();
+            return true;
+
+          case LogicalKeyboardKey.keyE:
+            introController?.actionFavVideo(isQuick: true);
+            return true;
+
+          case LogicalKeyboardKey.keyT:
+            introController?.viewLater();
+            return true;
+        }
       }
     }
 
