@@ -100,17 +100,7 @@ class PlayerFocus extends StatelessWidget {
       if (!plPlayerController.isLive) {
         if (event is KeyDownEvent) {
           if (hasPlayer) {
-            plPlayerController
-              ..longPressTimer?.cancel()
-              ..longPressTimer = Timer.periodic(
-                const Duration(milliseconds: 200),
-                plPlayerController.multiBackwardStart,
-              );
-          }
-        } else if (event is KeyUpEvent) {
-          plPlayerController.cancelLongPressTimer();
-          if (hasPlayer) {
-            plPlayerController.multiBackwardEnd();
+            plPlayerController.seekRelative(const Duration(seconds: -30));
           }
         }
       }
