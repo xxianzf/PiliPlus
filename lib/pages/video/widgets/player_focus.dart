@@ -8,6 +8,7 @@ import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -38,7 +39,10 @@ class PlayerFocus extends StatelessWidget {
         logicalKey == LogicalKeyboardKey.arrowLeft ||
         logicalKey == LogicalKeyboardKey.arrowRight ||
         logicalKey == LogicalKeyboardKey.arrowUp ||
-        logicalKey == LogicalKeyboardKey.arrowDown;
+        logicalKey == LogicalKeyboardKey.arrowDown ||
+        logicalKey == LogicalKeyboardKey.numpadAdd ||
+        logicalKey == LogicalKeyboardKey.numpadSubtract ||
+        logicalKey == LogicalKeyboardKey.numpadMultiply;
   }
 
   @override
@@ -83,48 +87,8 @@ class PlayerFocus extends StatelessWidget {
     SmartDialog.showToast('${sp}x播放');
   }
 
-  void _updateVolume(KeyEvent event, {required bool isIncrease}) {
-    if (event is KeyDownEvent) {
-      if (hasPlayer) {
-        _setVolume(isIncrease: isIncrease);
-        plPlayerController
-          ..longPressTimer?.cancel()
-          ..longPressTimer = Timer.periodic(
-            const Duration(milliseconds: 150),
-            (_) => _setVolume(isIncrease: isIncrease),
-          );
-      }
-    } else if (event is KeyUpEvent) {
-      plPlayerController.cancelLongPressTimer();
-    }
-  }
-
   bool _handleKey(BuildContext context, KeyEvent event) {
     final key = event.logicalKey;
-
-    final isKeyQ = key == LogicalKeyboardKey.keyQ;
-    if (isKeyQ || key == LogicalKeyboardKey.keyR) {
-      if (HardwareKeyboard.instance.isMetaPressed) {
-        if (isKeyQ && Platform.isMacOS) {
-          exit(0);
-        }
-        return true;
-      }
-      if (event is KeyDownEvent) {
-        if (plPlayerController.isLive) {
-          onRefresh?.call();
-        } else {
-          introController!.onStartTriple();
-        }
-      } else if (event is KeyUpEvent && !plPlayerController.isLive) {
-        introController!.onCancelTriple(isKeyQ);
-      }
-      return true;
-    } else if (event is KeyDownEvent) {
-      if (introController?.isTripling ?? false) {
-        introController!.onCancelTriple();
-      }
-    }
 
     final isArrowUp = key == LogicalKeyboardKey.arrowUp;
     if (isArrowUp || key == LogicalKeyboardKey.arrowDown) {
@@ -140,11 +104,14 @@ class PlayerFocus extends StatelessWidget {
               ..longPressTimer?.cancel()
               ..longPressTimer = Timer.periodic(
                 const Duration(milliseconds: 200),
-                (_) => plPlayerController.onBackward(),
+                plPlayerController.multiBackwardStart,
               );
           }
         } else if (event is KeyUpEvent) {
           plPlayerController.cancelLongPressTimer();
+          if (hasPlayer) {
+            plPlayerController.multiBackwardEnd();
+          }
         }
       }
       return true;
@@ -190,62 +157,15 @@ class PlayerFocus extends StatelessWidget {
           return true;
 
         case LogicalKeyboardKey.numpadDivide:
-          final isFullScreen = this.isFullScreen;
-          if (isFullScreen && plPlayerController.controlsLock.value) {
-            plPlayerController
-              ..controlsLock.value = false
-              ..showControls.value = false;
-          }
           plPlayerController.triggerFullScreen(
             status: !isFullScreen,
-            inAppFullScreen: false,
+            inAppFullScreen: HardwareKeyboard.instance.isShiftPressed,
           );
           return true;
 
-        case LogicalKeyboardKey.keyD:
-          final newVal = !plPlayerController.enableShowDanmakuAdaptive.value;
-          plPlayerController.enableShowDanmakuAdaptive.value = newVal;
-          if (!plPlayerController.tempPlayerConf) {
-            GStorage.setting.put(
-              plPlayerController.isLive
-                  ? SettingBoxKey.enableShowLiveDanmaku
-                  : SettingBoxKey.enableShowDanmaku,
-              newVal,
-            );
-          }
-          return true;
-
-        case LogicalKeyboardKey.keyP:
+        case LogicalKeyboardKey.home:
           if (PlatformUtils.isDesktop && hasPlayer && !isFullScreen) {
-            plPlayerController
-              ..toggleDesktopPip()
-              ..controlsLock.value = false
-              ..showControls.value = false;
-          }
-          return true;
-
-        case LogicalKeyboardKey.keyM:
-          if (hasPlayer) {
-            final isMuted = !plPlayerController.isMuted;
-            plPlayerController.videoPlayerController!.setVolume(
-              isMuted ? 0 : plPlayerController.volume.value * 100,
-            );
-            plPlayerController.isMuted = isMuted;
-            SmartDialog.showToast('${isMuted ? '' : '取消'}静音');
-          }
-          return true;
-
-        case LogicalKeyboardKey.keyS:
-          if (hasPlayer && isFullScreen) {
-            plPlayerController.takeScreenshot();
-          }
-          return true;
-
-        case LogicalKeyboardKey.keyL:
-          if (isFullScreen || plPlayerController.isDesktopPip) {
-            plPlayerController.onLockControl(
-              !plPlayerController.controlsLock.value,
-            );
+            plPlayerController.toggleDesktopPip();
           }
           return true;
 
@@ -256,7 +176,6 @@ class PlayerFocus extends StatelessWidget {
           onSendDanmaku();
           return true;
 
-        // 小键盘 + - * 倍速
         case LogicalKeyboardKey.numpadAdd:
         case LogicalKeyboardKey.numpadSubtract:
         case LogicalKeyboardKey.numpadMultiply:
@@ -264,51 +183,49 @@ class PlayerFocus extends StatelessWidget {
             _numpadSpeed(key: key);
           }
           return true;
-
-        // PageUp / PageDown 上下集
-        case LogicalKeyboardKey.pageUp:
-          if (introController case final introController?) {
-            if (!introController.prevPlay()) {
-              SmartDialog.showToast('第一集');
-            }
-          }
-          return true;
-        case LogicalKeyboardKey.pageDown:
-          if (introController case final introController?) {
-            if (!introController.nextPlay()) {
-              SmartDialog.showToast('最后一集');
-            }
-          }
-          return true;
-
-        // End 合集弹窗
-        case LogicalKeyboardKey.end:
-          if (introController case final UgcIntroController ugcCtr) {
-            ugcCtr.actionRelationMod(context);
-          }
-          return true;
       }
 
       if (!plPlayerController.isLive) {
         switch (key) {
-          case LogicalKeyboardKey.keyW:
-            if (HardwareKeyboard.instance.isMetaPressed) {
-              return true;
-            }
-            introController?.actionCoinVideo();
-            return true;
-
-          case LogicalKeyboardKey.keyE:
-            introController?.actionFavVideo(isQuick: true);
-            return true;
-
-          case LogicalKeyboardKey.keyT:
+          case LogicalKeyboardKey.end:
             introController?.viewLater();
+            return true;
+
+          case LogicalKeyboardKey.pageUp:
+            if (introController case final introController?) {
+              if (!introController.prevPlay()) {
+                SmartDialog.showToast('第一集');
+              }
+            }
+            return true;
+
+          case LogicalKeyboardKey.pageDown:
+            if (introController case final introController?) {
+              if (!introController.nextPlay()) {
+                SmartDialog.showToast('最后一集');
+              }
+            }
             return true;
         }
       }
     }
 
     return false;
+  }
+
+  void _updateVolume(KeyEvent event, {required bool isIncrease}) {
+    if (event is KeyDownEvent) {
+      if (hasPlayer) {
+        _setVolume(isIncrease: isIncrease);
+        plPlayerController
+          ..longPressTimer?.cancel()
+          ..longPressTimer = Timer.periodic(
+            const Duration(milliseconds: 150),
+            (_) => _setVolume(isIncrease: isIncrease),
+          );
+      }
+    } else if (event is KeyUpEvent) {
+      plPlayerController.cancelLongPressTimer();
+    }
   }
 }
