@@ -100,7 +100,7 @@ class PlayerFocus extends StatelessWidget {
       if (!plPlayerController.isLive) {
         if (event is KeyDownEvent) {
           if (hasPlayer) {
-            plPlayerController.seekRelative(const Duration(seconds: -30));
+            plPlayerController.onForward(const Duration(seconds: -30));
           }
         }
       }
