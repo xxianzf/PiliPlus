@@ -51,7 +51,7 @@ class PlayerFocus extends StatelessWidget {
     return Listener(
       onPointerSignal: (PointerSignalEvent event) {
         if (event is PointerScrollEvent) {
-          double cur = plPlayerController.playbackSpeed.value;
+          double cur = plPlayerController.playbackSpeed;
           double nextSpeed;
           if (event.scrollDelta.dy < 0) {
             // 滚轮上 +0.1
@@ -93,9 +93,9 @@ class PlayerFocus extends StatelessWidget {
     plPlayerController.setVolume(volume);
   }
 
-  // 小键盘 ± 步长0.1
+  // 小键盘 ± 步长0.1，已移除 .value
   void _numpadSpeed({required LogicalKeyboardKey key}) {
-    double sp = plPlayerController.playbackSpeed.value;
+    double sp = plPlayerController.playbackSpeed;
     if (key == LogicalKeyboardKey.numpadAdd) {
       sp += 0.1;
     } else if (key == LogicalKeyboardKey.numpadSubtract) {
@@ -183,7 +183,7 @@ class PlayerFocus extends StatelessWidget {
           return true;
 
         case LogicalKeyboardKey.enter:
-          // Enter：跳过分段
+          // Enter：仅跳过分段，移除发弹幕
           if (onSkipSegment?.call() ?? false) {
             return true;
           }
