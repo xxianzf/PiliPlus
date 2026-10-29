@@ -9,6 +9,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -47,16 +48,35 @@ class PlayerFocus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      autofocus: true,
-      onKeyEvent: (node, event) {
-        final handled = _handleKey(context, event);
-        if (handled || _shouldHandle(event.logicalKey)) {
-          return KeyEventResult.handled;
+    return Listener(
+      onPointerSignal: (PointerSignalEvent event) {
+        if (event is PointerScrollEvent) {
+          double cur = plPlayerController.playbackSpeed.value;
+          double nextSpeed;
+          if (event.scrollDelta.dy < 0) {
+            // 滚轮上 +0.1
+            nextSpeed = double.parse((cur + 0.1).toStringAsFixed(1));
+          } else {
+            // 滚轮下 -0.1
+            nextSpeed = double.parse((cur - 0.1).toStringAsFixed(1));
+          }
+          if (nextSpeed >= 0.2 && nextSpeed <= 4.0) {
+            plPlayerController.setPlaybackSpeed(nextSpeed);
+            SmartDialog.showToast('${nextSpeed}x播放');
+          }
         }
-        return KeyEventResult.ignored;
       },
-      child: child,
+      child: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          final handled = _handleKey(context, event);
+          if (handled || _shouldHandle(event.logicalKey)) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: child,
+      ),
     );
   }
 
@@ -73,8 +93,9 @@ class PlayerFocus extends StatelessWidget {
     plPlayerController.setVolume(volume);
   }
 
+  // 小键盘 ± 步长0.1
   void _numpadSpeed({required LogicalKeyboardKey key}) {
-    double sp = plPlayerController.playbackSpeed;
+    double sp = plPlayerController.playbackSpeed.value;
     if (key == LogicalKeyboardKey.numpadAdd) {
       sp += 0.1;
     } else if (key == LogicalKeyboardKey.numpadSubtract) {
@@ -82,9 +103,11 @@ class PlayerFocus extends StatelessWidget {
     } else if (key == LogicalKeyboardKey.numpadMultiply) {
       sp = 1.0;
     }
-    sp = (sp * 10).round() / 10;
-    plPlayerController.setPlaybackSpeed(sp);
-    SmartDialog.showToast('${sp}x播放');
+    sp = double.parse(sp.toStringAsFixed(1));
+    if (sp >= 0.2 && sp <= 4.0) {
+      plPlayerController.setPlaybackSpeed(sp);
+      SmartDialog.showToast('${sp}x播放');
+    }
   }
 
   bool _handleKey(BuildContext context, KeyEvent event) {
@@ -149,7 +172,7 @@ class PlayerFocus extends StatelessWidget {
         case LogicalKeyboardKey.numpadDivide:
           plPlayerController.triggerFullScreen(
             status: !isFullScreen,
-            inAppFullScreen: HardwareKeyboard.instance.isShiftPressed,
+            inAppFullScreen: false,
           );
           return true;
 
@@ -160,10 +183,10 @@ class PlayerFocus extends StatelessWidget {
           return true;
 
         case LogicalKeyboardKey.enter:
+          // Enter：跳过分段
           if (onSkipSegment?.call() ?? false) {
             return true;
           }
-          onSendDanmaku();
           return true;
 
         case LogicalKeyboardKey.numpadAdd:
@@ -178,6 +201,7 @@ class PlayerFocus extends StatelessWidget {
       if (!plPlayerController.isLive) {
         switch (key) {
           case LogicalKeyboardKey.end:
+            // End：稍后观看
             introController?.viewLater();
             return true;
 
