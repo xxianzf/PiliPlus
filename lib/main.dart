@@ -107,7 +107,7 @@ void main() async {
     _initDownPath(),
     _initTmpPath(),
     CacheManager.ensureInitialized(),
-    ?FontUtils.init(),
+    FontUtils.init(),
   ]);
   Get
     ..lazyPut(AccountService.new)
@@ -117,7 +117,7 @@ void main() async {
   if (PlatformUtils.isMobile) {
     if (Platform.isAndroid) MaxScreenSize.init();
     await Future.wait([
-      if (Pref.horizontalScreen) ?fullMode() else ?portraitUpMode(),
+      if (Pref.horizontalScreen) fullMode() else portraitUpMode(),
       setupServiceLocator(),
       if (Platform.isIOS) IOSPipHelper.init(),
     ]);
@@ -142,7 +142,7 @@ void main() async {
   FocusManager.instance.addEarlyKeyEventHandler(_onKeyEvent);
 
   if (PlatformUtils.isMobile) {
-    SystemChrome.setEnabledSystemUIMode(.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         systemNavigationBarColor: Colors.transparent,
@@ -174,7 +174,6 @@ void main() async {
   }
 
   if (Pref.enableLog) {
-    // 异常捕获 logo记录
     final customParameters = {
       'Build Time': DateFormatUtils.format(
         BuildConfig.buildTime,
@@ -187,7 +186,7 @@ void main() async {
     final fileHandler = await JsonFileHandler.init();
 
     Catcher2(
-      [?fileHandler, const ConsoleHandler()],
+      [fileHandler, const ConsoleHandler()],
       const MyApp(),
       logger: logger,
       customParameters: customParameters,
@@ -200,12 +199,11 @@ void main() async {
     final window = WindowManager.instance.getCurrent();
     if (window != null) {
       final showTitleBar = Pref.showWindowTitleBar;
-      // macOS 隐藏标题栏时改用 contentUnderTitleBar，保持窗口可拖动
       final useContentUnderTitleBar = Platform.isMacOS && !showTitleBar;
       window
         ..titleBarStyle = useContentUnderTitleBar || showTitleBar
-            ? .normal
-            : .hidden
+            ? TitleBarStyle.normal
+            : TitleBarStyle.hidden
         ..isWindowControlButtonsVisible = true
         ..bounds = calcWindowBounds()
         ..minimumSize = DeviceUtils.desktopMinSize
@@ -217,9 +215,9 @@ void main() async {
         ..focus()
         ..show();
       switch (WidgetsBinding.instance.schedulerPhase) {
-        case .idle || .postFrameCallbacks:
+        case SchedulerPhase.idle || SchedulerPhase.postFrameCallbacks:
           WidgetsBinding.instance.scheduleFrameCallback(show);
-        case .transientCallbacks || .midFrameMicrotasks || .persistentCallbacks:
+        case SchedulerPhase.transientCallbacks || SchedulerPhase.midFrameMicrotasks || SchedulerPhase.persistentCallbacks:
           WidgetsBinding.instance.addPostFrameCallback(show);
       }
     }
@@ -227,11 +225,26 @@ void main() async {
 }
 
 KeyEventResult _onKeyEvent(KeyEvent event) {
-  if (event is KeyDownEvent && event.logicalKey == .escape) {
-    _onBack();
-    return .handled;
+  if (event is KeyDownEvent) {
+    // F4 最小化
+    if (event.logicalKey == LogicalKeyboardKey.f4) {
+      WindowManager.instance.minimize();
+      return KeyEventResult.handled;
+    }
+    // F3 切换置顶
+    if (event.logicalKey == LogicalKeyboardKey.f3) {
+      WindowManager.instance.isAlwaysOnTop().then((v) {
+        WindowManager.instance.setAlwaysOnTop(!v);
+      });
+      return KeyEventResult.handled;
+    }
+    // ESC 返回
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      _onBack();
+      return KeyEventResult.handled;
+    }
   }
-  return .ignored;
+  return KeyEventResult.ignored;
 }
 
 void _onBack() {
@@ -242,7 +255,7 @@ void _onBack() {
 
   final route = Get.routing.route;
   if (route is GetPageRoute) {
-    if (route.popDisposition == .doNotPop) {
+    if (route.popDisposition == RoutePopDisposition.doNotPop) {
       route.onPopInvokedWithResult(false, null);
       return;
     }
@@ -273,8 +286,8 @@ class MyApp extends StatelessWidget {
           Color(customColor);
       final variant = Pref.schemeVariant;
 
-      lightScheme = brandColor.asColorSchemeSeed(variant, .light);
-      darkScheme = brandColor.asColorSchemeSeed(variant, .dark);
+      lightScheme = brandColor.asColorSchemeSeed(variant, Brightness.light);
+      darkScheme = brandColor.asColorSchemeSeed(variant, Brightness.dark);
     }
 
     return (
@@ -358,10 +371,8 @@ class MyApp extends StatelessWidget {
     return child;
   }
 
-  /// from [DynamicColorBuilderState.initPlatformState]
   static Future<bool> initPlatformState() async {
     if (_light != null || _dark != null) return true;
-    // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       final colors = await DynamicColorPlugin.channel.invokeMethod(
         DynamicColorPlugin.methodName,
@@ -390,8 +401,8 @@ class MyApp extends StatelessWidget {
           debugPrint('dynamic_color: Accent color detected.');
         }
         final variant = Pref.schemeVariant;
-        _light = accentColor.asColorSchemeSeed(variant, .light);
-        _dark = accentColor.asColorSchemeSeed(variant, .dark);
+        _light = accentColor.asColorSchemeSeed(variant, Brightness.light);
+        _dark = accentColor.asColorSchemeSeed(variant, Brightness.dark);
         return true;
       }
     } on PlatformException {
@@ -411,9 +422,6 @@ class _CustomHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     final client = super.createHttpClient(context);
-    // ..maxConnectionsPerHost = 32
-    /// The default value is 15 seconds.
-    //   ..idleTimeout = const Duration(seconds: 15);
     if (kDebugMode || Pref.badCertificateCallback) {
       client.badCertificateCallback = (cert, host, port) => true;
     }
