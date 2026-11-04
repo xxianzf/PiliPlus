@@ -45,8 +45,8 @@ class PlayerFocus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Listener(
-      onPointerSignal: (PointerEvent event) {
-        if (event is PointerMoveEvent && event.signalKind == PointerSignalKind.scroll) {
+      onPointerSignal: (PointerSignalEvent event) {
+        if (event.signalKind == PointerSignalKind.scroll) {
           double cur = plPlayerController.playbackSpeed;
           double nextSpeed;
           if (event.scrollDelta.dy < 0) {
@@ -142,7 +142,6 @@ class PlayerFocus extends StatelessWidget {
           return true;
         case LogicalKeyboardKey.numpadAdd:
         case LogicalKeyboardKey.numpadSubtract:
-        case LogicalKeyboardKey.numpadMultiply:
         case LogicalKeyboardKey.numpadMultiply:
           if (!plPlayerController.isLive && hasPlayer) {
             _numpadSpeed(key: key);
