@@ -9,6 +9,7 @@ import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, HardwareKeyboard;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -39,14 +40,14 @@ class PlayerFocus extends StatelessWidget {
         logicalKey == LogicalKeyboardKey.arrowLeft ||
         logicalKey == LogicalKeyboardKey.arrowRight ||
         logicalKey == LogicalKeyboardKey.arrowUp ||
-        logicalKey == LogicalKeyboardKey.arrowDown ;
+        logicalKey == LogicalKeyboardKey.arrowDown;
   }
 
   @override
   Widget build(BuildContext context) {
     return Listener(
-      onPointerSignal: (PointerSignalEvent event) {
-        if (event.signalKind == PointerSignalKind.scroll) {
+      onPointerSignal: (PointerEvent event) {
+        if (event is PointerScrollEvent) {
           double cur = plPlayerController.playbackSpeed;
           double nextSpeed;
           if (event.scrollDelta.dy < 0) {
@@ -128,7 +129,7 @@ class PlayerFocus extends StatelessWidget {
     if (event is KeyDownEvent) {
       switch (key) {
         case LogicalKeyboardKey.space:
-           if (plPlayerController.isLive || canPlay!()) {
+          if (plPlayerController.isLive || canPlay!()) {
             if (hasPlayer) {
               plPlayerController.onDoubleTapCenter();
             }
