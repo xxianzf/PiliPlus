@@ -45,8 +45,8 @@ class PlayerFocus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Listener(
-      onPointerSignal: (PointerSignalEvent event) {
-        if (event is PointerScrollEvent) {
+      onPointerSignal: (PointerEvent event) {
+        if (event is PointerMoveEvent && event.signalKind == PointerSignalKind.scroll) {
           double cur = plPlayerController.playbackSpeed;
           double nextSpeed;
           if (event.scrollDelta.dy < 0) {
@@ -54,7 +54,7 @@ class PlayerFocus extends StatelessWidget {
           } else {
             nextSpeed = double.parse((cur - 0.1).toStringAsFixed(1));
           }
-          if (nextSpeed >= 0.2 && nextSpeed <= 4.0) {
+          if (nextSpeed >= 0.1 && nextSpeed <= 5.0) {
             plPlayerController.setPlaybackSpeed(nextSpeed);
             SmartDialog.showToast('${nextSpeed}x播放');
           }
@@ -143,6 +143,7 @@ class PlayerFocus extends StatelessWidget {
         case LogicalKeyboardKey.numpadAdd:
         case LogicalKeyboardKey.numpadSubtract:
         case LogicalKeyboardKey.numpadMultiply:
+        case LogicalKeyboardKey.numpadMultiply:
           if (!plPlayerController.isLive && hasPlayer) {
             _numpadSpeed(key: key);
           }
@@ -213,7 +214,7 @@ class PlayerFocus extends StatelessWidget {
       sp = 1.0;
     }
     sp = double.parse(sp.toStringAsFixed(1));
-    if (sp >= 0.2 && sp <= 4.0) {
+    if (sp >= 0.1 && sp <= 5.0) {
       plPlayerController.setPlaybackSpeed(sp);
       SmartDialog.showToast('${sp}x播放');
     }
